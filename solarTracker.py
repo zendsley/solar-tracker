@@ -7,8 +7,12 @@ import cherrypy
 import serial
 import time, os, glob
 
-PORT = '/dev/ttyUSB0'
-serial_feed = serial.Serial(PORT)
+PORT = '/dev/tty.usbmodem1451'
+
+ser = serial.Serial(
+    port=PORT,
+    baudrate=9600
+    )
 
 # Saves raw input from serial stream to list; each list member is length of the specified byte size
 # Assumes serial_feed is already .open() thus live
@@ -20,10 +24,9 @@ def read_serial(live_serial_feed, bytes=5):
 
 # Writes given output to a live serial feed in hex bytes from given data list
 def write_serial(live_serial_feed, data):
-    hex_data = []
     for i in data:
-        hex_data.append(i)      
-    live_serial_feed.write(hex_data,len(hex_data))
+        print i
+        live_serial_feed.write(i)
     return
 
 
@@ -54,11 +57,21 @@ class StringGenerator(object):
         return output
 
     @cherrypy.expose
-    def scan(self, select=1, precision=10, range=90, x=0, y=0):
+    def scan(self, select=1, scan_range=90, precision=10, x=0, y=0):
         #data_points = sweep_sky(precision)
         #max_light_point = find_max_point(data_points)
+        select=1
+        scan_range=90
+        x=0
+        y=0
         max_light_point = [450,20,60]
-
+        scan_data = []
+        scan_data.append(select)
+        scan_data.append(scan_range)
+        scan_data.append(precision)
+        scan_data.append(x)
+        scan_data.append(y)
+        write_serial(ser,scan_data)
 
         ### Scan page format ###
         header = """ <html>

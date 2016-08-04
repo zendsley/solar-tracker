@@ -8,88 +8,24 @@ int photocellPin = A0;    // photocell sensor input
 int ledPin = 11;      // select the pin for the LED
 int photocellValue = 0;  // variable to store the value coming from the photocell val
 
-void setup() {
-  Serial.begin(9600);         // set up Serial library at 9600 bps
-
-  // turn on the servos
-  servo1.attach(10);  //The servo labels appear to be backwards as listed on the board
-  servo2.attach(9);
-
-  // set the positions to 0 when starting up
-  servo1.write(0);
-  servo2.write(0);
-}
-int sweeptype;
-int input;
-int range;
-int precision;
-int x;
-int y;
-void loop() {
-  if (Serial.available()) {
-    sweeptype=Serial.read()-'0';
-    if (sweeptype==1){
-      Serial.print("full sweep!");
-      Serial.print("\n");
-      delay(20);
-      while (Serial.available()) {
-        if ((Serial.read()-'0')==-4){
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            range=range*10;
-            range += input;
-            delay(20); 
-          }
-          Serial.print("range:");
-          Serial.print(range);
-          Serial.print("\n");
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            precision=precision*10;
-            precision += input;
-            delay(20); 
-          }
-          Serial.print("precision:");
-          Serial.print(precision);
-          Serial.print("\n");
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            x=x*10;
-            x += input;
-            delay(20); 
-          }
-          Serial.print("x:");
-          Serial.print(x);
-          Serial.print("\n");
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            y=y*10;
-            y += input;
-            delay(20); 
-          }
-          Serial.print("y:");
-          Serial.print(y);
-          Serial.print("\n");
-        }
-      }
-    }
-    else if (sweeptype == 2){
-      Serial.print("enhance scan");
-      Serial.print("\n");
-    }
+void read_serial() {
+  int select;
+  int range;
+  int precision;
+  int x_val;
+  int y_val;
+  if (Serial.available() >0) {
+    select = Serial.read();
+    range = Serial.read();
+    precision = Serial.read();
+    x_val = Serial.read();
+    y_val = Serial.read();
   }
+  Serial.println(select, DEC);
+  Serial.println(range, DEC);
+  Serial.println(precision, DEC);
+  Serial.println(x_val, DEC);
+  Serial.println(y_val, DEC);
 }
 void full_scan(float precision) {
   float pi=3.14159;
@@ -173,5 +109,95 @@ void full_scan(float precision) {
         }
     }
 }
+
+void setup() {
+  Serial.begin(9600);         // set up Serial library at 9600 bps
+  Serial.print("Begin Serial Communication");
+  // turn on the servos
+  servo1.attach(10);  //The servo labels appear to be backwards as listed on the board
+  servo2.attach(9);
+
+  // set the positions to 0 when starting up
+  servo1.write(0);
+  servo2.write(0);
+}
+
+int sweeptype;
+int input;
+int range;
+int precision;
+int x;
+int y;
+
+void loop() {
+  if (Serial.available()) {
+    read_serial();
+    sweeptype=Serial.read()-'0';
+    if (sweeptype==1){
+      Serial.print("full sweep!");
+      Serial.print("\n");
+      full_scan(10);
+      delay(20);
+      while (Serial.available()) {
+        if ((Serial.read()-'0')==-4){
+          while (Serial.available()) {
+            input=Serial.read()-'0';
+            if (input==-4){
+              break;
+            }
+            range=range*10;
+            range += input;
+            delay(20); 
+          }
+          Serial.print("range:");
+          Serial.print(range);
+          Serial.print("\n");
+          while (Serial.available()) {
+            input=Serial.read()-'0';
+            if (input==-4){
+              break;
+            }
+            precision=precision*10;
+            precision += input;
+            delay(20); 
+          }
+          Serial.print("precision:");
+          Serial.print(precision);
+          Serial.print("\n");
+          
+          while (Serial.available()) {
+            input=Serial.read()-'0';
+            if (input==-4){
+              break;
+            }
+            x=x*10;
+            x += input;
+            delay(20); 
+          }
+          Serial.print("x:");
+          Serial.print(x);
+          Serial.print("\n");
+          while (Serial.available()) {
+            input=Serial.read()-'0';
+            if (input==-4){
+              break;
+            }
+            y=y*10;
+            y += input;
+            delay(20); 
+          }
+          Serial.print("y:");
+          Serial.print(y);
+          Serial.print("\n");
+        }
+      }
+    }
+    else if (sweeptype == 2){
+      Serial.print("enhance scan");
+      Serial.print("\n");
+    }
+  }
+}
+
 
 
