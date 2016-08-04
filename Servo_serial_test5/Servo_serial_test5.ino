@@ -29,80 +29,118 @@ int precision;
 int x;
 int y;
 
-void loop() {
-  // look for available serial data in the format 1,range,precision,x,y
-  if (Serial.available()) {
-    select=Serial.read()-'0';
-    if (select==1){
-      Serial.print("Starting Scan with inputs:");
-      Serial.print("\n");
-      delay(20);
-      while (Serial.available()) {
-        //since the code subracts the character '0' (which is read as 48) from the serial input
-        //and a ',' is 44, we need to search for -4 to separate the separate input values 
-        if ((Serial.read()-'0')==-4){
+//void loop() {
+//  // look for available serial data in the format select,range,precision,x,y
+//  if (Serial.available() > 0) {
+//    select=Serial.read()-'0';
+//    if (select==1){
+//      Serial.print("Starting Scan with inputs:");
+//      Serial.print("\n");
+//      delay(20);
+//      while (Serial.available()) {
+//        //since the code subracts the character '0' (which is read as 48) from the serial input
+//        //and a ',' is 44, we need to search for -4 to separate the separate input values 
+//        if ((Serial.read()-'0')==-4){
+//
+//          //for each input value consisting of more than one digit we need to iterate through
+//          //each digit, multiply by ten, and take in the next digit until a ',' is found
+//          while (Serial.available()) {
+//            input=Serial.read()-'0';
+//            if (input==-4){
+//              break;
+//            }
+//            range=range*10;
+//            range += input;
+//            delay(20); 
+//          }
+//          Serial.print("range=");
+//          Serial.print(range);
+//          Serial.print("\n");
+//          while (Serial.available()) {
+//            input=Serial.read()-'0';
+//            if (input==-4){
+//              break;
+//            }
+//            precision=precision*10;
+//            precision += input;
+//            delay(20); 
+//          }
+//          Serial.print("precision=");
+//          Serial.print(precision);
+//          Serial.print("\n");
+//          while (Serial.available()) {
+//            input=Serial.read()-'0';
+//            if (input==-4){
+//              break;
+//            }
+//            x=x*10;
+//            x += input;
+//            delay(20); 
+//          }
+//          Serial.print("x=");
+//          Serial.print(x);
+//          Serial.print("\n");
+//          while (Serial.available()) {
+//            input=Serial.read()-'0';
+//            if (input==-4){
+//              break;
+//            }
+//            y=y*10;
+//            y += input;
+//            delay(20); 
+//          }
+//          Serial.print("y=");
+//          Serial.print(y);
+//          Serial.print("\n");
+//        }
+//      }
+//    }
+//    scan(range, precision,x,y); // initiates scan with the given inputs
+//    // reset inputs back to zero to ready for next scan
+//    range = 0; 
+//    precision = 0;
+//    x=0;
+//    y=0;
+//  }
+//}
+//
 
-          //for each input value consisting of more than one digit we need to iterate through
-          //each digit, multiply by ten, and take in the next digit until a ',' is found
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            range=range*10;
-            range += input;
-            delay(20); 
-          }
-          Serial.print("range=");
-          Serial.print(range);
-          Serial.print("\n");
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            precision=precision*10;
-            precision += input;
-            delay(20); 
-          }
-          Serial.print("precision=");
-          Serial.print(precision);
-          Serial.print("\n");
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            x=x*10;
-            x += input;
-            delay(20); 
-          }
-          Serial.print("x=");
-          Serial.print(x);
-          Serial.print("\n");
-          while (Serial.available()) {
-            input=Serial.read()-'0';
-            if (input==-4){
-              break;
-            }
-            y=y*10;
-            y += input;
-            delay(20); 
-          }
-          Serial.print("y=");
-          Serial.print(y);
-          Serial.print("\n");
-        }
-      }
+
+// New Test loop
+
+int InstArray[5];
+int temp;
+int count;
+
+void read_serial(int InstArray[]) {
+ if (Serial.available() > 0) {
+    //read_serial(InstArray, command_number);
+    temp = Serial.read();
+    Serial.print("temp=");
+    Serial.println(temp);
+    Serial.print("count=");
+    Serial.println(count);
+    InstArray[count] = int(temp);
+    count++;
+    Serial.print("InstArray=");
+    for (int i; i<5; i++) {
+      Serial.println(InstArray[i]);
     }
-    scan(range, precision,x,y); // initiates scan with the given inputs
-    // reset inputs back to zero to ready for next scan
-    range = 0; 
-    precision = 0;
-    x=0;
-    y=0;
+  }
+  
+
+  
+  if (count == 5) {
+    count = 0;
   }
 }
+
+void loop() {
+  read_serial(InstArray);
+  
+}
+
+
 void scan(float range,float precision,float x,float y) {
   float pi=3.14159;
   float DP_inc=precision; //data point increment
