@@ -59,7 +59,7 @@ class StringGenerator(object):
         return output
 
     @cherrypy.expose
-    def scan(self, select=1, scan_range=90, precision=10, x=0, y=0):
+    def scan(self, select=1, scan_range=180, precision=20, x=90, y=90):
         #data_points = sweep_sky(precision)
         #max_light_point = find_max_point(data_points)
        

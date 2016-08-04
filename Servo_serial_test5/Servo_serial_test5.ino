@@ -23,12 +23,45 @@ void setup() {
 int input;
 
 // Variables used to determine sweep patter; expected to be read from serial stream
-int select;
-int range;
-int precision;
-int x;
-int y;
+//int select;
+//int range;
+//int precision;
+//int x;
+//int y;
 
+// Array for reading in input
+// select = InstArray[0];
+// range = InstArray[1];
+// precision = InstArray[2];
+// x = InstArray[3];
+// y = InstArray[4];
+int InstArray[5];
+int temp;
+int count;
+
+void read_serial(int InstArray[]) {
+ if (Serial.available() > 0) {
+    //read_serial(InstArray, command_number);
+    temp = Serial.read();
+    Serial.print("temp=");
+    Serial.println(temp);
+    Serial.print("count=");
+    Serial.println(count);
+    InstArray[count] = int(temp);
+    count++;
+    Serial.print("InstArray=");
+    for (int i; i<5; i++) {
+      Serial.println(InstArray[i]);
+    }
+  }
+  
+  if (count == 5) {
+    count = 0;
+  }
+  
+}
+
+// Legacy code for reading in Serial values from built in Arduino Serial Monitor
 //void loop() {
 //  // look for available serial data in the format select,range,precision,x,y
 //  if (Serial.available() > 0) {
@@ -105,42 +138,6 @@ int y;
 //}
 //
 
-
-// New Test loop
-
-int InstArray[5];
-int temp;
-int count;
-
-void read_serial(int InstArray[]) {
- if (Serial.available() > 0) {
-    //read_serial(InstArray, command_number);
-    temp = Serial.read();
-    Serial.print("temp=");
-    Serial.println(temp);
-    Serial.print("count=");
-    Serial.println(count);
-    InstArray[count] = int(temp);
-    count++;
-    Serial.print("InstArray=");
-    for (int i; i<5; i++) {
-      Serial.println(InstArray[i]);
-    }
-  }
-  
-
-  
-  if (count == 5) {
-    count = 0;
-  }
-}
-
-void loop() {
-  read_serial(InstArray);
-  
-}
-
-
 void scan(float range,float precision,float x,float y) {
   float pi=3.14159;
   float DP_inc=precision; //data point increment
@@ -153,8 +150,21 @@ void scan(float range,float precision,float x,float y) {
   float i_range_min;
   float j_range_max;
   float j_range_min;
+
+  // Debugging outputs
+  Serial.println("Starting Scan Function");
+  Serial.print("range=");
+  Serial.println(range);
+  Serial.print("precision=");
+  Serial.println(precision);
+  Serial.print("x_val=");
+  Serial.println(x);
+  Serial.print("y_val=");
+  Serial.println(y);
+  
   servo1.write(x);
   servo2.write(y);
+  
   delay(100);
   //finding the maximums and minimum values for i and j and adjusting their ranges 
   //such that they do not exceed the limits of the servos
@@ -247,12 +257,26 @@ void scan(float range,float precision,float x,float y) {
           Serial.print(j);
           Serial.print(";");
           Serial.print("\n");
-          analogWrite(ledPin, ledbrightness);  
           //delay(1);
           }
         }
       }
     }
+
+void loop() {
+  // Populate Array with instructions from Rasp Pi source
+  read_serial(InstArray);
+
+  Serial.println("#################");
+  delay(200);
+  // Check if select = 1 and start scan
+  if (InstArray[0] == 1 && count==4) {
+    Serial.println("SCANNING");
+    scan(180,20,90,90);
+    Serial.println("Finished Scanning");
+  }
+  
+}
 
 
 
