@@ -7,8 +7,11 @@ import cherrypy
 import serial
 import time, os, glob
 
+# Constant representing serial port of Arduino Uno device.
+# Locate port of device and change as needed
 PORT = '/dev/tty.usbmodem1451'
 
+# Define serial port connection & baud rate.  More parameters are availble, but left as default
 ser = serial.Serial(
     port=PORT,
     baudrate=9600
@@ -23,14 +26,13 @@ def read_serial(live_serial_feed, bytes=5):
     return serial_data
 
 # Writes given output to a live serial feed in hex bytes from given data list
+# This was originally thought to be a more complicated process, so this function was created;
+# Left for legacy reasons
 def write_serial(live_serial_feed, data):
-    for i in data:
-        print i
-        live_serial_feed.write(i)
+    live_serial_feed.write(data)
     return
 
-
-
+# CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
 class StringGenerator(object):
     @cherrypy.expose
     def index(self):
@@ -60,17 +62,29 @@ class StringGenerator(object):
     def scan(self, select=1, scan_range=90, precision=10, x=0, y=0):
         #data_points = sweep_sky(precision)
         #max_light_point = find_max_point(data_points)
-        select=1
-        scan_range=90
-        x=0
-        y=0
+       
+        # Test data for page creation purposes; remove once serial is running
         max_light_point = [450,20,60]
+
+        # Create list and append values to output over serial
         scan_data = []
-        scan_data.append(select)
-        scan_data.append(scan_range)
-        scan_data.append(precision)
-        scan_data.append(x)
-        scan_data.append(y)
+        scan_data.append(int(select))
+        scan_data.append(int(scan_range))
+        scan_data.append(int(precision))
+        scan_data.append(int(x))
+        scan_data.append(int(y))
+
+        # Print output to commandline for debugging/verification purposes
+        # Might as well leave this to enable data verification on the backend
+        print 
+        print scan_data
+        print
+        print 'select=', select
+        print 'scan_range=', scan_range
+        print 'precision=', precision
+        print 'x=', x
+        print 'y=', y
+        print
         write_serial(ser,scan_data)
 
         ### Scan page format ###
