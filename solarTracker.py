@@ -21,8 +21,12 @@ ser = serial.Serial(
 # Assumes serial_feed is already .open() thus live
 def read_serial(live_serial_feed, bytes=5):
     serial_data = []
-    while live_serial_feed.in_waiting > 0 :
-        serial_data.append(live_serial_feed.read(bytes))
+    # while live_serial_feed.out_waiting > 0 :
+    #     sleep(1)
+    while live_serial_feed.inWaiting() > 0 :
+    #live_serial_feed.flush()
+    #for i in range(bytes):
+        serial_data.append(live_serial_feed.readline())
     return serial_data
 
 # Writes given output to a live serial feed in hex bytes from given data list
@@ -30,7 +34,27 @@ def read_serial(live_serial_feed, bytes=5):
 # Left for legacy reasons
 def write_serial(live_serial_feed, data):
     live_serial_feed.write(data)
+    live_serial_feed.flush()
     return
+
+def strip_serial(serial_data):
+    clean_data = []
+    print 'lum, x, y'
+    for i, val in enumerate(serial_data):
+        clean_data.append(val.strip(';\r\n'))
+        print clean_data[i]
+    return clean_data
+
+# Objects for each data point are a bit overkill...
+# class LightPoint:
+#     def __init__(self, light_intensity, x_val, y_val):
+#         self.light_intensity = light_intensity
+#         self.x_val = x_val
+#         self.y_val = y_val
+#     def __repr__(self):
+#         return repr((self.light_intensity,self.x_val,self.y_val))
+
+
 
 # CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
 class StringGenerator(object):
@@ -67,17 +91,17 @@ class StringGenerator(object):
         max_light_point = [450,20,60]
 
         # Create list and append values to output over serial
-        scan_data = []
-        scan_data.append(int(select))
-        scan_data.append(int(scan_range))
-        scan_data.append(int(precision))
-        scan_data.append(int(x))
-        scan_data.append(int(y))
+        scan_instructions = []
+        scan_instructions.append(int(select))
+        scan_instructions.append(int(scan_range))
+        scan_instructions.append(int(precision))
+        scan_instructions.append(int(x))
+        scan_instructions.append(int(y))
 
         # Print output to commandline for debugging/verification purposes
         # Might as well leave this to enable data verification on the backend
         print 
-        print scan_data
+        print scan_instructions
         print
         print 'select=', select
         print 'scan_range=', scan_range
@@ -85,7 +109,23 @@ class StringGenerator(object):
         print 'x=', x
         print 'y=', y
         print
-        write_serial(ser,scan_data)
+        write_serial(ser,scan_instructions)
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
+        time.sleep(2)
+        # Read serial data from Arduino Uno
+        scan_results = []
+        scan_results = read_serial(ser,3)
+        print 'scan results:'
+        print scan_results
+        print
+        clean_data = []
+        clean_data = strip_serial(scan_results)
+        print
+        print 'clean results'
+        print clean_data
+        print
+
 
         ### Scan page format ###
         header = """ <html>
@@ -138,7 +178,6 @@ class StringGenerator(object):
         footer = "</body></html>"
         output = " <br>\n".join([header, intro_line, results_table, input_box, footer])
         return output
-
 
 if __name__ == "__main__" :
     conf = {'server.socket_host': '0.0.0.0'}

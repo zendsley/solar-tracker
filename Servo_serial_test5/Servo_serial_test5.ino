@@ -39,24 +39,27 @@ int InstArray[5];
 int temp;
 int count;
 
+bool serial_input = true;
+
 void read_serial(int InstArray[]) {
  if (Serial.available() > 0) {
     //read_serial(InstArray, command_number);
     temp = Serial.read();
-    Serial.print("temp=");
-    Serial.println(temp);
-    Serial.print("count=");
-    Serial.println(count);
+//    Serial.print("temp=");
+//    Serial.println(temp);
+//    Serial.print("count=");
+//    Serial.println(count);
     InstArray[count] = int(temp);
     count++;
-    Serial.print("InstArray=");
-    for (int i; i<5; i++) {
-      Serial.println(InstArray[i]);
-    }
+//    Serial.print("InstArray=");
+//    for (int i; i<5; i++) {
+//      Serial.println(InstArray[i]);
+//    }
   }
   
   if (count == 5) {
     count = 0;
+    serial_input = false;
   }
   
 }
@@ -152,15 +155,15 @@ void scan(float range,float precision,float x,float y) {
   float j_range_min;
 
   // Debugging outputs
-  Serial.println("Starting Scan Function");
-  Serial.print("range=");
-  Serial.println(range);
-  Serial.print("precision=");
-  Serial.println(precision);
-  Serial.print("x_val=");
-  Serial.println(x);
-  Serial.print("y_val=");
-  Serial.println(y);
+//  Serial.println("Starting Scan Function");
+//  Serial.print("range=");
+//  Serial.println(range);
+//  Serial.print("precision=");
+//  Serial.println(precision);
+//  Serial.print("x_val=");
+//  Serial.println(x);
+//  Serial.print("y_val=");
+//  Serial.println(y);
   
   servo1.write(x);
   servo2.write(y);
@@ -223,9 +226,9 @@ void scan(float range,float precision,float x,float y) {
           Serial.print(i);
           Serial.print(",");
           Serial.print(j);
-          Serial.print(";");
-          Serial.print("\n");
-          //delay(1);
+          Serial.println(";");
+//          Serial.print("\n");
+         // delay(2);
           }
         }
         else if (j>=j_range_max) {
@@ -255,8 +258,8 @@ void scan(float range,float precision,float x,float y) {
           Serial.print(i);
           Serial.print(",");
           Serial.print(j);
-          Serial.print(";");
-          Serial.print("\n");
+          Serial.println(";");
+//          Serial.print("\n");
           //delay(1);
           }
         }
@@ -267,13 +270,17 @@ void loop() {
   // Populate Array with instructions from Rasp Pi source
   read_serial(InstArray);
 
-  Serial.println("#################");
+  // Serial.println("#################");
   delay(200);
   // Check if select = 1 and start scan
-  if (InstArray[0] == 1 && count==4) {
-    Serial.println("SCANNING");
-    scan(180,20,90,90);
-    Serial.println("Finished Scanning");
+  if (InstArray[0] == 1 && serial_input==false) {
+    //Serial.println("SCANNING");
+    if (Serial.availableForWrite() > 0) {
+      scan(InstArray[1],InstArray[2],InstArray[3],InstArray[4]);
+      serial_input=true;
+    }
+
+    //Serial.println("Finished Scanning");
   }
   
 }
