@@ -28,6 +28,7 @@ def read_serial(live_serial_feed, bytes=5):
     #live_serial_feed.flush()
     #for i in range(bytes):
         serial_data.append(live_serial_feed.readline())
+        #sleep(1)
     return serial_data
 
 # Writes given output to a live serial feed in hex bytes from given data list
@@ -55,16 +56,18 @@ def strip_serial(serial_data):
 #     def __repr__(self):
 #         return repr((self.light_intensity,self.x_val,self.y_val))
 
+# Originally used lists to populate table; see numpy array for better method of number storage
 def create_list(list):
     light_points = []
     for i in list:
         light_points.append(i.split(','))
     return light_points
 
+# Used to create a matrix of light_intensity, x, and y values
 def create_numpy_array(list):
-        numpy_array = np.array([[float(j) for j in i.split(',')] for i in data.splitlines()])
+        numpy_array = np.array([[float(j) for j in i.split(',')] for i in list])
         # numpy_array = np.array((float(j) for j in i.split(',')) for i in list)
-        print numpy_array
+        # print numpy_array
         return numpy_array
 
 # CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
@@ -98,9 +101,6 @@ class StringGenerator(object):
         #data_points = sweep_sky(precision)
         #max_light_point = find_max_point(data_points)
        
-        # Test data for page creation purposes; remove once serial is running
-        max_light_point = [450,20,60]
-
         # Create list and append values to output over serial
         scan_instructions = []
         scan_instructions.append(int(select))
@@ -123,7 +123,7 @@ class StringGenerator(object):
         write_serial(ser,scan_instructions)
         ser.reset_input_buffer()
         ser.reset_output_buffer()
-        time.sleep(2)
+        time.sleep(10)
         # Read serial data from Arduino Uno
         scan_results = []
         scan_results = read_serial(ser,3)
@@ -140,6 +140,11 @@ class StringGenerator(object):
         print
         data_list = create_list(clean_data)
         print data_list
+        print
+        print 'numpy'
+        print
+        numpy_array = create_numpy_array(clean_data)
+        print numpy_array
 
 
 
@@ -170,20 +175,34 @@ class StringGenerator(object):
             <body>"""
         intro_line = "<h2>Results:</h2>"
 
-        results_table = """
+        results_table_head= """
             <table>
                 <tr>
                     <th>Light Intensity</th>
                     <th>Servo Arm Position</th>
                     <th>Servo Base Position</th>
                 </tr>
+            """
+        results_table_data = ""
+        # for i in data_list:
+        #     results_table_data += """
+        #         <tr>
+        #             <th>%s</th>
+        #             <th>%s</th>
+        #             <th>%s</th>
+        #         </tr>
+        #     """ % (i[0], i[1], i[2])
+        for i in numpy_array:
+            results_table_data += """
                 <tr>
                     <th>%s</th>
                     <th>%s</th>
                     <th>%s</th>
                 </tr>
-            </table>
-            """ % (max_light_point[0], max_light_point[1], max_light_point[2])
+            """ % (i[0], i[1], i[2])
+
+        results_table_end = "</table>"
+
 
 
         input_box = """<form method="get" action="index">
@@ -192,7 +211,7 @@ class StringGenerator(object):
                 </form>"""
 
         footer = "</body></html>"
-        output = " <br>\n".join([header, intro_line, results_table, input_box, footer])
+        output = " <br>\n".join([header, intro_line, results_table_head, results_table_data, results_table_end, input_box, footer])
         return output
 
 if __name__ == "__main__" :
