@@ -28,7 +28,7 @@ def read_serial(live_serial_feed, bytes=5):
     #live_serial_feed.flush()
     #for i in range(bytes):
         serial_data.append(live_serial_feed.readline())
-        time.sleep(0.02)
+        time.sleep(0.12)
     return serial_data
 
 # Writes given output to a live serial feed in hex bytes from given data list
@@ -74,11 +74,13 @@ def create_numpy_array(list):
 
 def find_max_light(array):
     max_val = 0
+    max_val_index = 0
     for i, val in enumerate(array):
         if val[0] > max_val:
             max_val = val[0]
             max_val_index = i
     return max_val, max_val_index
+
 
 # CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
 class StringGenerator(object):
@@ -88,8 +90,6 @@ class StringGenerator(object):
         ### Index page format ###
         header = """ <html>
             <head>
-            <link href="/static/css/style.css" rel="stylesheet">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Solar Tracker</title>
             </head>
             <body>"""
@@ -108,8 +108,6 @@ class StringGenerator(object):
 
     @cherrypy.expose
     def scan(self, select=1, scan_range=180, precision=20, x=90, y=90):
-        #data_points = sweep_sky(precision)
-        #max_light_point = find_max_point(data_points)
        
         # Create list and append values to output over serial
         scan_instructions = []
@@ -164,14 +162,18 @@ class StringGenerator(object):
         print max_light_value
         print numpy_array[max_light_value_index]
         print
-        
+        lock_on_instructions = []
+        lock_on_instructions.append(int(select))
+        lock_on_instructions.append(int(1))
+        lock_on_instructions.append(int(1))
+        lock_on_instructions.append(int(numpy_array[max_light_value_index][1]))
+        lock_on_instructions.append(int(numpy_array[max_light_value_index][2]))
+        write_serial(ser,lock_on_instructions)
 
 
         ### Scan page format ###
         header = """ <html>
             <head>
-            <link href="/static/css/style.css" rel="stylesheet">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
             table {
                 font-family: arial, sans-serif;
@@ -186,15 +188,34 @@ class StringGenerator(object):
             }
 
             tr:nth-child(even) {
-                background-color: #ffff33;
+                background-color: #dddddd;
             }
+            #max-table tr:nth-child(even) {background-color: #ffff33;}{background-color: #ffff33;}
             </style>
+
             <title>Solar Tracker v</title>  
             </head>
             <body>"""
-        intro_line = "<h2>Results:</h2>"
+        intro_line = "<h2>Max Light Value:</h2>"
 
-        results_table_head= """
+        max_table= """
+            <table id="max-table">
+                <tr>
+                    <th>Light Intensity</th>
+                    <th>Servo Arm Position</th>
+                    <th>Servo Base Position</th>
+                </tr>
+                <tr>
+                    <th>%s</th>
+                    <th>%s</th>
+                    <th>%s</th>
+                </tr>
+                </table>
+                <br>
+            """ % (numpy_array[max_light_value_index][0], numpy_array[max_light_value_index][1], numpy_array[max_light_value_index][2])
+
+        results_table = """
+            <h2>Scan Data:</h2>
             <table>
                 <tr>
                     <th>Light Intensity</th>
@@ -202,7 +223,6 @@ class StringGenerator(object):
                     <th>Servo Base Position</th>
                 </tr>
             """
-        results_table_data = ""
         # for i in data_list:
         #     results_table_data += """
         #         <tr>
@@ -212,7 +232,7 @@ class StringGenerator(object):
         #         </tr>
         #     """ % (i[0], i[1], i[2])
         for i in numpy_array:
-            results_table_data += """
+            results_table += """
                 <tr>
                     <th>%s</th>
                     <th>%s</th>
@@ -220,17 +240,39 @@ class StringGenerator(object):
                 </tr>
             """ % (i[0], i[1], i[2])
 
-        results_table_end = "</table>"
+        results_table += "</table>"
 
+        enchance_button = """<form method="get" action="enhance">
+            <button type="submit" style="font-size:15px">Enhance Scan</button>
+        </form>"""
 
-
-        input_box = """<form method="get" action="index">
-                    <br>
-                    <button type="submit" style="font-size:10px">Scan Again?</button>
+        start_over_button = """<form method="get" action="index">
+                    <button type="submit" style="font-size:15px">Start Over</button>
                 </form>"""
 
         footer = "</body></html>"
-        output = " <br>\n".join([header, intro_line, results_table_head, results_table_data, results_table_end, input_box, footer])
+        output = " <br>\n".join([header, intro_line, max_table, results_table, start_over_button, enchance_button, footer])
+        return output
+
+    @cherrypy.expose
+    def enhance(self, scan_range, precision, x, y):
+        ### Enhance page format ###
+        header = """ <html>
+            <head>
+            <title>Solar Tracker</title>
+            </head>
+            <body>"""
+        intro_line = """<h1>Solar Tracker</h1> <br> Welcome to Solar Tracker!
+        Specify degrees of precision (out of 180):<br>"""
+
+        input_box = """<form method="get" action="scan">
+                    <input type="number" name="precision" min="1" max="180" value="10">
+                    <br><br>
+                    <button type="submit" style="font-size:10px">Submit</button>
+                </form>"""
+
+        footer = "</body></html>"
+        output = " <br>\n".join([header, intro_line, input_box, footer])
         return output
 
 if __name__ == "__main__" :

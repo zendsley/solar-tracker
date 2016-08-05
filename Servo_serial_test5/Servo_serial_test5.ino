@@ -201,6 +201,7 @@ void scan(float range,float precision,float x,float y) {
         if (j<=j_range_min) {
           for (j=j_range_min; j<j_range_max; j=j+H_inc) {
           servo2.write(j);
+          delay(100);
           photocellValue = analogRead(photocellPin);  
           photocellValue = constrain(photocellValue, 0, 1500); //adjust depending on environment.   
      
@@ -234,6 +235,7 @@ void scan(float range,float precision,float x,float y) {
         else if (j>=j_range_max) {
           for (j=j_range_max; j>j_range_min; j=j-H_inc) {
           servo2.write(j);
+          delay(100);
           photocellValue = analogRead(photocellPin);  
           photocellValue = constrain(photocellValue, 0, 1500); //adjust depending on environment.   
      
