@@ -6,6 +6,7 @@
 import cherrypy
 import serial
 import time, os, glob
+import numpy as np
 
 # Constant representing serial port of Arduino Uno device.
 # Locate port of device and change as needed
@@ -41,7 +42,7 @@ def strip_serial(serial_data):
     clean_data = []
     print 'lum, x, y'
     for i, val in enumerate(serial_data):
-        clean_data.append(val.strip(';\r\n'))
+        clean_data.append(val.strip('\n'))
         print clean_data[i]
     return clean_data
 
@@ -54,7 +55,17 @@ def strip_serial(serial_data):
 #     def __repr__(self):
 #         return repr((self.light_intensity,self.x_val,self.y_val))
 
+def create_list(list):
+    light_points = []
+    for i in list:
+        light_points.append(i.split(','))
+    return light_points
 
+def create_numpy_array(list):
+        numpy_array = np.array([[float(j) for j in i.split(',')] for i in data.splitlines()])
+        # numpy_array = np.array((float(j) for j in i.split(',')) for i in list)
+        print numpy_array
+        return numpy_array
 
 # CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
 class StringGenerator(object):
@@ -125,6 +136,11 @@ class StringGenerator(object):
         print 'clean results'
         print clean_data
         print
+        print 'list'
+        print
+        data_list = create_list(clean_data)
+        print data_list
+
 
 
         ### Scan page format ###

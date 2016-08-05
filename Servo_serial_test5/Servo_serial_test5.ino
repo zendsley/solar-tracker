@@ -226,7 +226,7 @@ void scan(float range,float precision,float x,float y) {
           Serial.print(i);
           Serial.print(",");
           Serial.print(j);
-          Serial.println(";");
+          Serial.print("\n");
 //          Serial.print("\n");
          // delay(2);
           }
@@ -258,7 +258,7 @@ void scan(float range,float precision,float x,float y) {
           Serial.print(i);
           Serial.print(",");
           Serial.print(j);
-          Serial.println(";");
+          Serial.print("\n");
 //          Serial.print("\n");
           //delay(1);
           }
