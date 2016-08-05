@@ -1,7 +1,10 @@
-# Zack Endsley
-# ECE492
-# 2016_08_03
-# This cherrypy server is designed to be the UI component for the solar tracker project
+# Solar Tracker
+# SIUE Solar Racing Team
+# Authors: Zack Endsley, Drew Dunham
+# Course: ECE492/ME492
+# Date: 2016_08_03
+# Description: This cherrypy server is designed to be the UI component for the solar tracker project.
+# The solarTrackerUno.ino code loaded onto an Arduino Uno is required to sucessfully interface with this server.
 
 import cherrypy
 import serial
@@ -10,7 +13,8 @@ import numpy as np
 
 # Constant representing serial port of Arduino Uno device.
 # Locate port of device and change as needed
-PORT = '/dev/tty.usbmodem1451'
+PORT = '/dev/tty.usbmodem1451'  # port for Mac
+#PORT = '/dev/ttyACM0' #port for RaspPi
 
 # Define serial port connection & baud rate.  More parameters are availble, but left as default
 ser = serial.Serial(
@@ -41,6 +45,7 @@ def write_serial(live_serial_feed, data):
     live_serial_feed.flush()
     return
 
+# Strips extra characters from list of serial input; run after read_serial()
 def strip_serial(serial_data):
     clean_data = []
     print 'lum, x, y'
@@ -48,15 +53,6 @@ def strip_serial(serial_data):
         clean_data.append(val.strip('\n'))
         print clean_data[i]
     return clean_data
-
-# Objects for each data point are a bit overkill...
-# class LightPoint:
-#     def __init__(self, light_intensity, x_val, y_val):
-#         self.light_intensity = light_intensity
-#         self.x_val = x_val
-#         self.y_val = y_val
-#     def __repr__(self):
-#         return repr((self.light_intensity,self.x_val,self.y_val))
 
 # Originally used lists to populate table; see numpy array for better method of number storage
 def create_list(list):
@@ -72,6 +68,7 @@ def create_numpy_array(list):
         # print numpy_array
         return numpy_array
 
+# Pass in a numpy array and recieve the max value in the first column and associated index value
 def find_max_light(array):
     max_val = 0
     max_val_index = 0
@@ -82,8 +79,11 @@ def find_max_light(array):
     return max_val, max_val_index
 
 
-# CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
+# CherryPy portion of code; consists of html defining pages, function calls to above functions, and text output to terminal
 class StringGenerator(object):
+
+    # index is the first page to visit for the program
+    # Layout: Welcome message, Precision Input, Submit to 'scan' page
     @cherrypy.expose
     def index(self):
 
@@ -106,10 +106,11 @@ class StringGenerator(object):
         output = " <br>\n".join([header, intro_line, input_box, footer])
         return output
 
+    # scan is main part of the program; handles all of the serial communication and output as well as serverside information
     @cherrypy.expose
     def scan(self, select=1, scan_range=180, precision=20, x=90, y=90):
        
-        # Create list and append values to output over serial
+        # Create list and append values from page call to output over serial
         scan_instructions = []
         scan_instructions.append(int(select))
         scan_instructions.append(int(scan_range))
@@ -117,8 +118,35 @@ class StringGenerator(object):
         scan_instructions.append(int(x))
         scan_instructions.append(int(y))
 
-        # Print output to commandline for debugging/verification purposes
-        # Might as well leave this to enable data verification on the backend
+        # Write the instructions to serial port
+        write_serial(ser,scan_instructions)
+        time.sleep(2)
+
+        # Read serial data from Arduino Uno
+        scan_results = read_serial(ser,3)
+
+        # Flush input and output streams to clean any extra unwanted data after read
+        ser.flushInput()
+        ser.flushOutput()
+
+        # Strip away formatting and save values to an array
+        clean_data = strip_serial(scan_results)
+        numpy_array = create_numpy_array(clean_data)
+
+        # Find the brightest point scanned and it's index
+        max_light_value, max_light_value_index = find_max_light(numpy_array)
+
+        # Build instructions to lock on to the brightest point and reposition sensor
+        lock_on_instructions = []
+        lock_on_instructions.append(int(select))
+        lock_on_instructions.append(int(1))
+        lock_on_instructions.append(int(1))
+        lock_on_instructions.append(int(numpy_array[max_light_value_index][1]))
+        lock_on_instructions.append(int(numpy_array[max_light_value_index][2]))
+        write_serial(ser,lock_on_instructions)
+
+        
+        # Print output to commandline for debugging/verification purposes on backend
         print 
         print scan_instructions
         print
@@ -128,47 +156,18 @@ class StringGenerator(object):
         print 'x=', x
         print 'y=', y
         print
-        write_serial(ser,scan_instructions)
-        
-        time.sleep(2)
-        # Read serial data from Arduino Uno
-        scan_results = []
-        scan_results = read_serial(ser,3)
-        ser.flushInput()
-        ser.flushOutput()
-
         print 'scan results:'
         print scan_results
         print
-        clean_data = []
-        clean_data = strip_serial(scan_results)
-        # print
-        # print 'clean results'
-        # print clean_data
-        # print
-        # print 'list'
-        # print
-        # data_list = create_list(clean_data)
-        # print data_list
-        print
         print 'numpy'
         print
-        numpy_array = create_numpy_array(clean_data)
         print numpy_array
         print
         print 'max light value'
         print
-        max_light_value, max_light_value_index = find_max_light(numpy_array)
         print max_light_value
         print numpy_array[max_light_value_index]
-        print
-        lock_on_instructions = []
-        lock_on_instructions.append(int(select))
-        lock_on_instructions.append(int(1))
-        lock_on_instructions.append(int(1))
-        lock_on_instructions.append(int(numpy_array[max_light_value_index][1]))
-        lock_on_instructions.append(int(numpy_array[max_light_value_index][2]))
-        write_serial(ser,lock_on_instructions)
+       
 
 
         ### Scan page format ###
@@ -236,14 +235,7 @@ class StringGenerator(object):
                     <th>Servo Base Position</th>
                 </tr>
             """
-        # for i in data_list:
-        #     results_table_data += """
-        #         <tr>
-        #             <th>%s</th>
-        #             <th>%s</th>
-        #             <th>%s</th>
-        #         </tr>
-        #     """ % (i[0], i[1], i[2])
+
         for i in numpy_array:
             results_table += """
                 <tr>
@@ -261,37 +253,6 @@ class StringGenerator(object):
 
         footer = "</body></html>"
         output = " <br>\n".join([header, intro_line, max_table, enchance_button, results_table, start_over_button, footer])
-        return output
-
-    @cherrypy.expose
-    def enhance(self, scan_range=30, precision=3, x=0, y=0):
-        ### Enhance page format ###
-        header = """ <html>
-            <head>
-            <title>Solar Tracker</title>
-            </head>
-            <body>"""
-        intro_line = """<h1>Solar Tracker</h1> <br> Enhance the scan by increasing precision and scanning over a smaller range.
-        Specify degrees of precision (out of 180):<br>"""
-
-        precision_input = """<form method="get" action="scan">
-                    <p>Precision</p>
-                    <input type="number" name="precision" min="1" max="180" value="3">
-                    <p>Scan Range</p>
-                    <input type="number" name="scan_range" min="1" max="180" value="30">
-                    <br><br>
-                    <button type="submit" style="font-size:15px">Submit</button>
-                </form>"""
-
-        # range_input = """<form method="get" action="scan">
-        #             <input type="number" name="scan_range" min="1" max="180" value="30">
-        #             <br><br>
-        #             <button type="submit" style="font-size:15px">Submit</button>
-        #         </form>"""
-
-
-        footer = "</body></html>"
-        output = " <br>\n".join([header, intro_line, precision_input, footer])
         return output
 
 if __name__ == "__main__" :
