@@ -1,4 +1,4 @@
-# Solar Tracker
+# SIUE Solar Tracker
 # SIUE Solar Racing Team
 # Authors: Zack Endsley, Drew Dunham
 # Course: ECE492/ME492
@@ -90,10 +90,10 @@ class StringGenerator(object):
         ### Index page format ###
         header = """ <html>
             <head>
-            <title>Solar Tracker</title>
+            <title>SIUE Solar Tracker</title>
             </head>
             <body>"""
-        intro_line = """<h1>Solar Tracker</h1> <br> Welcome to Solar Tracker!
+        intro_line = """<h1>SIUE Solar Tracker</h1> <br> Welcome to SIUE Solar Tracker!
         Specify degrees of precision (out of 180):<br>"""
 
         input_box = """<form method="get" action="scan">
@@ -107,6 +107,8 @@ class StringGenerator(object):
         return output
 
     # scan is main part of the program; handles all of the serial communication and output as well as serverside information
+    # Layout: Max light Value displayed, Enhance options available to rerun scan w/ narrower parameter,
+    # Full Scan Data table, return to index button
     @cherrypy.expose
     def scan(self, select=1, scan_range=180, precision=20, x=90, y=90):
        
@@ -192,7 +194,7 @@ class StringGenerator(object):
             #max-table tr:nth-child(even) {background-color: #ffff33;}{background-color: #ffff33;}
             </style>
 
-            <title>Solar Tracker v</title>  
+            <title>SIUE Solar Tracker</title>  
             </head>
             <body>"""
         intro_line = "<h2>Max Light Value:</h2>"

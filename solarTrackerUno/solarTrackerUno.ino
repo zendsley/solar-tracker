@@ -28,8 +28,6 @@ void setup() {
   servo2.write(0);
 }
 
-int input;
-
 // Array for storing serial input from rasp pi
 int InstArray[5];  //Expecting 5 values; select, range, precision, x_val, y_val
 int temp;
@@ -67,26 +65,14 @@ void scan(float range,float precision,float x,float y) {
   float i_range_min;
   float j_range_max;
   float j_range_min;
-
-  // Debugging outputs
-//  Serial.println("Starting Scan Function");
-//  Serial.print("range=");
-//  Serial.println(range);
-//  Serial.print("precision=");
-//  Serial.println(precision);
-//  Serial.print("x_val=");
-//  Serial.println(x);
-//  Serial.print("y_val=");
-//  Serial.println(y);
   
   servo1.write(x);
   servo2.write(y);
   
   delay(100);
   
-  //finding the maximum and minimum values for i and j and adjusting their ranges 
-  //such that they do not exceed the limits of the servos
-  
+  // find the maximum and minimum values for i and j and adjust their ranges 
+  // such that they do not exceed the limits of the servos
   i_range_max=x+range/2;
   if (i_range_max>180){
     i_range_max=180;
@@ -104,70 +90,56 @@ void scan(float range,float precision,float x,float y) {
     j_range_min=0;
   }
   
+  // begin scanning process
   for (i=i_range_min; i<i_range_max; i=i+V_inc) {
         servo1.write(i);
         delay(100);
-        //calculate the horizontal increment based on the horizontal arc lenth to 
-        //maintain even spacing between the points where data is taken
-        H_arc_len=pi*57.296*sin(pi*i/180);
+        
+        // calculate the horizontal increment based on the horizontal arc lenth to 
+        // maintain even spacing between the points where data is taken
+        H_arc_len=pi*57.296*sin(pi*i/180);   
         H_inc=abs(DP_inc*180/H_arc_len);
+        
+        // Prevents skipping rows in arc if H_inc value is too large
         if (H_inc>180) {
           H_inc=91;
         }
+        
+        // Min range -> Max range
         if (j<=j_range_min) {
           for (j=j_range_min; j<j_range_max; j=j+H_inc) {
-          servo2.write(j);
-          delay(100);   // this delay was necessary to give photocell enough time to react
-          photocellValue = analogRead(photocellPin);  
-          photocellValue = constrain(photocellValue, 0, 1500); //adjust depending on environment.   
-
-            // Debugging Text output
-//          Serial.print("photocell=");
-//          Serial.print(photocellValue);
-//          Serial.print("\n");
-//          Serial.print("x_deg=");
-//          Serial.print(i);
-//          Serial.print("\n");
-//          Serial.print("y_deg=");
-//          Serial.print(j);
-//          Serial.print("\n"); 
-  
-          // Serial Output to Rasp Pi
-          // Format: photocellValue,x_deg,y_deg
-          Serial.print(photocellValue);
-          Serial.print(",");
-          Serial.print(i);
-          Serial.print(",");
-          Serial.print(j);
-          Serial.print("\n");
+            servo2.write(j);
+            delay(100);   // give photocell time to react
+            photocellValue = analogRead(photocellPin);  
+            photocellValue = constrain(photocellValue, 0, 1500); //adjust depending on environment.   
+    
+            // Serial Output to Rasp Pi
+            // Format: photocellValue,x_deg,y_deg
+            Serial.print(photocellValue);
+            Serial.print(",");
+            Serial.print(i);
+            Serial.print(",");
+            Serial.print(j);
+            Serial.print("\n");
           }
         }
+        
+        // Max range -> Min range
         else if (j>=j_range_max) {
           for (j=j_range_max; j>j_range_min; j=j-H_inc) {
-          servo2.write(j);
-          delay(100);  // this delay was necessary to give photocell enough time to react
-          photocellValue = analogRead(photocellPin);  
-          photocellValue = constrain(photocellValue, 0, 1500); //adjust depending on environment.   
-  
-          // Debugging Text output
-//          Serial.print("photocell=");
-//          Serial.print(photocellValue);
-//          Serial.print("\n");
-//          Serial.print("x_deg=");
-//          Serial.print(i);
-//          Serial.print("\n");
-//          Serial.print("y_deg=");
-//          Serial.print(j);
-//          Serial.print("\n");
-  
-          // Serial Output to Rasp Pi
-          // Format: photocellValue,x_deg,y_deg
-          Serial.print(photocellValue);
-          Serial.print(",");
-          Serial.print(i);
-          Serial.print(",");
-          Serial.print(j);
-          Serial.print("\n");
+            servo2.write(j);
+            delay(100);  // give photocell time to react
+            photocellValue = analogRead(photocellPin);  
+            photocellValue = constrain(photocellValue, 0, 1500); //adjust depending on environment.   
+            
+            // Serial Output to Rasp Pi
+            // Format: photocellValue,x_deg,y_deg
+            Serial.print(photocellValue);
+            Serial.print(",");
+            Serial.print(i);
+            Serial.print(",");
+            Serial.print(j);
+            Serial.print("\n");
           }
         }
       }
@@ -176,21 +148,16 @@ void scan(float range,float precision,float x,float y) {
 void loop() {
   // Populate Array with instructions from Rasp Pi source
   read_serial(InstArray);
-
-  // Serial.println("#################");
   delay(200);
-  // Check if select = 1 and start scan
+  
+  // Check if select = 1 and if serial_input is in write mode
   if (InstArray[0] == 1 && serial_input==false) {
-    //Serial.println("SCANNING");
     if (Serial.availableForWrite() > 0) {
       scan(InstArray[1],InstArray[2],InstArray[3],InstArray[4]);
       serial_input=true;
     }
-
-    //Serial.println("Finished Scanning");
   }
   
 }
-
 
 
