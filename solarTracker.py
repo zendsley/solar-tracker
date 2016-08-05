@@ -28,13 +28,15 @@ def read_serial(live_serial_feed, bytes=5):
     #live_serial_feed.flush()
     #for i in range(bytes):
         serial_data.append(live_serial_feed.readline())
-        #sleep(1)
+        time.sleep(0.02)
     return serial_data
 
 # Writes given output to a live serial feed in hex bytes from given data list
 # This was originally thought to be a more complicated process, so this function was created;
 # Left for legacy reasons
 def write_serial(live_serial_feed, data):
+    live_serial_feed.flushInput()
+    live_serial_feed.flushOutput()
     live_serial_feed.write(data)
     live_serial_feed.flush()
     return
@@ -69,6 +71,14 @@ def create_numpy_array(list):
         # numpy_array = np.array((float(j) for j in i.split(',')) for i in list)
         # print numpy_array
         return numpy_array
+
+def find_max_light(array):
+    max_val = 0
+    for i, val in enumerate(array):
+        if val[0] > max_val:
+            max_val = val[0]
+            max_val_index = i
+    return max_val, max_val_index
 
 # CherryPy portion of code; mostly html defining pages and function calls to above functions where needed
 class StringGenerator(object):
@@ -121,31 +131,40 @@ class StringGenerator(object):
         print 'y=', y
         print
         write_serial(ser,scan_instructions)
-        ser.reset_input_buffer()
-        ser.reset_output_buffer()
-        time.sleep(10)
+        
+        time.sleep(2)
         # Read serial data from Arduino Uno
         scan_results = []
         scan_results = read_serial(ser,3)
+        ser.flushInput()
+        ser.flushOutput()
+
         print 'scan results:'
         print scan_results
         print
         clean_data = []
         clean_data = strip_serial(scan_results)
-        print
-        print 'clean results'
-        print clean_data
-        print
-        print 'list'
-        print
-        data_list = create_list(clean_data)
-        print data_list
+        # print
+        # print 'clean results'
+        # print clean_data
+        # print
+        # print 'list'
+        # print
+        # data_list = create_list(clean_data)
+        # print data_list
         print
         print 'numpy'
         print
         numpy_array = create_numpy_array(clean_data)
         print numpy_array
-
+        print
+        print 'max light value'
+        print
+        max_light_value, max_light_value_index = find_max_light(numpy_array)
+        print max_light_value
+        print numpy_array[max_light_value_index]
+        print
+        
 
 
         ### Scan page format ###
