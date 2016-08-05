@@ -97,7 +97,7 @@ class StringGenerator(object):
         Specify degrees of precision (out of 180):<br>"""
 
         input_box = """<form method="get" action="scan">
-                    <input type="number" name="precision" min="1" max="180" value="10">
+                    <input type="number" name="precision" min="1" max="180" value="20">
                     <br><br>
                     <button type="submit" style="font-size:10px">Submit</button>
                 </form>"""
@@ -214,6 +214,19 @@ class StringGenerator(object):
                 <br>
             """ % (numpy_array[max_light_value_index][0], numpy_array[max_light_value_index][1], numpy_array[max_light_value_index][2])
 
+        enchance_button = """<form method="get" action="scan">
+            <p>Enhance the scan by increasing precision and decreasing scan range to a smaller area.</p>
+            <p>Scan Range</p>
+            <input name=scan_range value=%s>
+            <p>Precision</p>
+            <input name=precision value=%s>
+            <p>Servo Arm Value</p>
+            <input name=x value=%s>
+            <p>Servo Base Value</p>
+            <input name=y value=%s>
+            <button type="submit" style="font-size:15px">Enhance Scan</button>
+        </form>""" % (30,3,int(numpy_array[max_light_value_index][1]), int(numpy_array[max_light_value_index][2]))
+
         results_table = """
             <h2>Scan Data:</h2>
             <table>
@@ -242,37 +255,43 @@ class StringGenerator(object):
 
         results_table += "</table>"
 
-        enchance_button = """<form method="get" action="enhance">
-            <button type="submit" style="font-size:15px">Enhance Scan</button>
-        </form>"""
-
         start_over_button = """<form method="get" action="index">
                     <button type="submit" style="font-size:15px">Start Over</button>
                 </form>"""
 
         footer = "</body></html>"
-        output = " <br>\n".join([header, intro_line, max_table, results_table, start_over_button, enchance_button, footer])
+        output = " <br>\n".join([header, intro_line, max_table, enchance_button, results_table, start_over_button, footer])
         return output
 
     @cherrypy.expose
-    def enhance(self, scan_range, precision, x, y):
+    def enhance(self, scan_range=30, precision=3, x=0, y=0):
         ### Enhance page format ###
         header = """ <html>
             <head>
             <title>Solar Tracker</title>
             </head>
             <body>"""
-        intro_line = """<h1>Solar Tracker</h1> <br> Welcome to Solar Tracker!
+        intro_line = """<h1>Solar Tracker</h1> <br> Enhance the scan by increasing precision and scanning over a smaller range.
         Specify degrees of precision (out of 180):<br>"""
 
-        input_box = """<form method="get" action="scan">
-                    <input type="number" name="precision" min="1" max="180" value="10">
+        precision_input = """<form method="get" action="scan">
+                    <p>Precision</p>
+                    <input type="number" name="precision" min="1" max="180" value="3">
+                    <p>Scan Range</p>
+                    <input type="number" name="scan_range" min="1" max="180" value="30">
                     <br><br>
-                    <button type="submit" style="font-size:10px">Submit</button>
+                    <button type="submit" style="font-size:15px">Submit</button>
                 </form>"""
 
+        # range_input = """<form method="get" action="scan">
+        #             <input type="number" name="scan_range" min="1" max="180" value="30">
+        #             <br><br>
+        #             <button type="submit" style="font-size:15px">Submit</button>
+        #         </form>"""
+
+
         footer = "</body></html>"
-        output = " <br>\n".join([header, intro_line, input_box, footer])
+        output = " <br>\n".join([header, intro_line, precision_input, footer])
         return output
 
 if __name__ == "__main__" :
